@@ -637,7 +637,7 @@ function dealInput(label, key, val, prefix){
     <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-500">${label}</span>
     <div class="relative mt-1">
       <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">${prefix}</span>
-      <input type="number" min="0" step="any" value="${val||0}" oninput="setDeal('${key}', this.value)" class="w-full h-10 pl-7 pr-2 border border-slate-200 rounded-lg font-semibold tabular-nums" />
+      <input type="number" min="0" step="any" value="${val||0}" onchange="setDeal('${key}', this.value)" class="w-full h-10 pl-7 pr-2 border border-slate-200 rounded-lg font-semibold tabular-nums" />
     </div>
   </label>`;
 }
