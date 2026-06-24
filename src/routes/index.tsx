@@ -1,23 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect } from "react";
+import html from "../estimator.html?raw";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Spark Homes Estimator" },
-      { name: "description", content: "Field repair cost estimator for real estate acquisition agents." },
-    ],
-  }),
-  component: Index,
+  server: {
+    handlers: {
+      GET: () =>
+        new Response(html, {
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+    },
+  },
 });
-
-function Index() {
-  useEffect(() => {
-    window.location.replace("/estimator.html");
-  }, []);
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F1F5F9] text-[#111827]">
-      <p>Loading Spark Homes Estimator…</p>
-    </div>
-  );
-}
