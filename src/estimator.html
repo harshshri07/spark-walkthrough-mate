@@ -1319,6 +1319,24 @@ async function doExportZip(){
 }
 
 /* ===== PDF (Client-ready, branded one-pager) ===== */
+let _logoPdfCache = null;
+async function loadLogoForPdf(){
+  if(_logoPdfCache !== null) return _logoPdfCache;
+  const url = "/__l5e/assets-v1/e611d62c-b231-43b9-95c4-f07b868156c0/spark-logo.png";
+  const img = new Image(); img.crossOrigin = "anonymous"; img.src = url;
+  await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; });
+  const c = document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight;
+  const ctx = c.getContext('2d'); ctx.drawImage(img,0,0);
+  // Invert near-black pixels to white so the wordmark reads on dark band
+  const d = ctx.getImageData(0,0,c.width,c.height); const px = d.data;
+  for(let i=0;i<px.length;i+=4){
+    const r=px[i], g=px[i+1], b=px[i+2];
+    if(r<60 && g<60 && b<60 && px[i+3]>20){ px[i]=255; px[i+1]=255; px[i+2]=255; }
+  }
+  ctx.putImageData(d,0,0);
+  _logoPdfCache = c.toDataURL('image/png');
+  return _logoPdfCache;
+}
 async function doExportPdf(){
   const p = current(); if(!p) return;
   toast("Generating PDF…");
