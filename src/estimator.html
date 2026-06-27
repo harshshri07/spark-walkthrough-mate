@@ -1335,11 +1335,17 @@ async function doExportPdf(){
 
   // === Header band ===
   doc.setFillColor(...INK); doc.rect(0,0,W,76,'F');
-  doc.setFillColor(...ORANGE); doc.roundedRect(M,22,32,32,6,6,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...ORANGE);
-  doc.text('SPARK HOMES', M+44, 36);
-  doc.setFontSize(18); doc.setTextColor(255,255,255);
-  doc.text('Repair Estimate', M+44, 56);
+  // Embed Spark logo (white version via canvas invert) — fall back to text mark
+  try {
+    const logoData = await loadLogoForPdf();
+    if(logoData) doc.addImage(logoData, 'PNG', M, 24, 120, 28);
+  } catch(_) {
+    doc.setFillColor(...ORANGE); doc.roundedRect(M,22,32,32,6,6,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...ORANGE);
+    doc.text('SPARK GROUP', M+44, 36);
+  }
+  doc.setFontSize(16); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+  doc.text('Repair Estimate', W-M, 40, {align:'right'});
   doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(200,200,200);
   doc.text(new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}), W-M, 56, {align:'right'});
 
