@@ -135,14 +135,10 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
     <div class="flex items-center gap-2.5 min-w-0">
-      <svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true">
-        <rect width="64" height="64" rx="14" fill="#C2500A"/>
-        <path d="M22 20c0-3.3 2.7-6 6-6h8c3.3 0 6 2.7 6 6v24c0 3.3-2.7 6-6 6h-8c-3.3 0-6-2.7-6-6V20zm6-2c-1.1 0-2 .9-2 2v24c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V20c0-1.1-.9-2-2-2h-8z" fill="white"/>
-        <circle cx="32" cy="32" r="4" fill="white"/>
-      </svg>
-      <div class="flex flex-col leading-tight min-w-0">
-        <span class="text-[9.5px] font-bold tracking-[0.18em] text-[var(--orange)]">SPARK HOMES</span>
-        <span id="projTitle" class="text-[13.5px] font-semibold truncate max-w-[180px]">Loading…</span>
+      <img src="/__l5e/assets-v1/e611d62c-b231-43b9-95c4-f07b868156c0/spark-logo.png" alt="Spark Group" class="h-6 w-auto shrink-0" />
+      <div class="flex flex-col leading-tight min-w-0 border-l border-[var(--line-2)] pl-2.5">
+        <span class="text-[9px] font-bold tracking-[0.16em] text-[var(--muted)] uppercase">Estimator</span>
+        <span id="projTitle" class="text-[13px] font-semibold truncate max-w-[170px]">Loading…</span>
       </div>
     </div>
     <button id="btnSettings" class="w-10 h-10 -mr-1 flex items-center justify-center rounded-xl active:bg-[var(--line-2)]" aria-label="Settings">
@@ -187,8 +183,8 @@
   <div class="side-panel" onclick="event.stopPropagation()">
     <div class="px-5 py-5 border-b border-[var(--line)] flex items-center justify-between">
       <div>
-        <div class="text-[10px] font-bold tracking-[0.18em] text-[var(--orange)]">SPARK HOMES</div>
-        <h2 class="text-[19px] font-bold mt-0.5">Projects</h2>
+        <img src="/__l5e/assets-v1/e611d62c-b231-43b9-95c4-f07b868156c0/spark-logo.png" alt="Spark Group" class="h-5 w-auto" />
+        <h2 class="text-[19px] font-bold mt-2">Projects</h2>
       </div>
       <button onclick="closeSide()" class="w-9 h-9 rounded-lg active:bg-[var(--line-2)] flex items-center justify-center text-[var(--muted)]" aria-label="Close">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -1323,6 +1319,24 @@ async function doExportZip(){
 }
 
 /* ===== PDF (Client-ready, branded one-pager) ===== */
+let _logoPdfCache = null;
+async function loadLogoForPdf(){
+  if(_logoPdfCache !== null) return _logoPdfCache;
+  const url = "/__l5e/assets-v1/e611d62c-b231-43b9-95c4-f07b868156c0/spark-logo.png";
+  const img = new Image(); img.crossOrigin = "anonymous"; img.src = url;
+  await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; });
+  const c = document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight;
+  const ctx = c.getContext('2d'); ctx.drawImage(img,0,0);
+  // Invert near-black pixels to white so the wordmark reads on dark band
+  const d = ctx.getImageData(0,0,c.width,c.height); const px = d.data;
+  for(let i=0;i<px.length;i+=4){
+    const r=px[i], g=px[i+1], b=px[i+2];
+    if(r<60 && g<60 && b<60 && px[i+3]>20){ px[i]=255; px[i+1]=255; px[i+2]=255; }
+  }
+  ctx.putImageData(d,0,0);
+  _logoPdfCache = c.toDataURL('image/png');
+  return _logoPdfCache;
+}
 async function doExportPdf(){
   const p = current(); if(!p) return;
   toast("Generating PDF…");
@@ -1339,11 +1353,17 @@ async function doExportPdf(){
 
   // === Header band ===
   doc.setFillColor(...INK); doc.rect(0,0,W,76,'F');
-  doc.setFillColor(...ORANGE); doc.roundedRect(M,22,32,32,6,6,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...ORANGE);
-  doc.text('SPARK HOMES', M+44, 36);
-  doc.setFontSize(18); doc.setTextColor(255,255,255);
-  doc.text('Repair Estimate', M+44, 56);
+  // Embed Spark logo (white version via canvas invert) — fall back to text mark
+  try {
+    const logoData = await loadLogoForPdf();
+    if(logoData) doc.addImage(logoData, 'PNG', M, 24, 120, 28);
+  } catch(_) {
+    doc.setFillColor(...ORANGE); doc.roundedRect(M,22,32,32,6,6,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...ORANGE);
+    doc.text('SPARK GROUP', M+44, 36);
+  }
+  doc.setFontSize(16); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+  doc.text('Repair Estimate', W-M, 40, {align:'right'});
   doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(200,200,200);
   doc.text(new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}), W-M, 56, {align:'right'});
 
